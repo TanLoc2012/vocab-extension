@@ -1,0 +1,14 @@
+{
+  "word_type": [
+    "noun",
+    "verb",
+    "adjective",
+    "adverb",
+    "pronoun",
+    "preposition",
+    "conjunction",
+    "interjection",
+    "determiner",
+    "exclamation"
+  ]
+}

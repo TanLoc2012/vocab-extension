@@ -9,12 +9,18 @@ function showIcon(text, x, y) {
   let existingIcon = document.getElementById("wordIcon");
   if (existingIcon) existingIcon.remove();
 
+  let selection = window.getSelection();
+  if (!selection.rangeCount) return;
+
+  let range = selection.getRangeAt(0);
+  let rect = range.getBoundingClientRect(); // Lấy vị trí của từ được chọn
+
   let icon = document.createElement("div");
   icon.id = "wordIcon";
   icon.innerText = "📌";
   icon.style.position = "absolute";
-  icon.style.left = `${x}px`;
-  icon.style.top = `${y}px`;
+  icon.style.left = `${rect.right + window.scrollX + 5}px`; // Hiển thị bên phải từ
+  icon.style.top = `${rect.top + window.scrollY}px`; // Căn theo chiều cao từ
   icon.style.cursor = "pointer";
   icon.style.backgroundColor = "#fff";
   icon.style.border = "1px solid #ccc";
@@ -27,9 +33,13 @@ function showIcon(text, x, y) {
 
   icon.addEventListener("click", function (event) {
     event.stopPropagation(); // Ngăn chặn sự kiện click lan ra ngoài
-    showPopup(text, x, y);
+    showPopup(text, rect.right + 10, rect.top);
     icon.remove(); // Xóa icon khi popup xuất hiện
   });
+
+  setTimeout(() => {
+    icon.remove();
+  }, 4000);
 }
 
 function showPopup(text) {
@@ -38,75 +48,48 @@ function showPopup(text) {
   let popup = document.createElement("div");
   popup.id = "wordPopup";
   popup.innerHTML = `
-      <div id="popupContent" style="
-        width: 350px;
-        padding: 20px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-family: Arial, sans-serif;
-      ">
-        <h3 style="margin-top: 0; text-align: center;">Thêm từ vựng</h3>
-  
-        <label style="font-weight: bold;">Từ:</label>
-        <input type="text" id="wordInput" value="${text}" style="
-          width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px;
-        " />
-  
-        <label style="font-weight: bold;">Loại từ:</label>
-        <input type="text" id="wordType" placeholder="Danh từ, động từ..." style="
-          width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px;
-        " />
-  
-        <label style="font-weight: bold;">Nghĩa:</label>
-        <input type="text" id="wordMeaning" placeholder="Nhập nghĩa..." style="
-          width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px;
-        " />
-  
-        <label style="font-weight: bold;">Ví dụ:</label>
-        <textarea id="wordExample" placeholder="Nhập câu ví dụ..." style="
-          width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; height: 60px;
-        "></textarea>
-  
-        <div style="display: flex; justify-content: space-between;">
-          <button id="saveBtn" style="
-            background-color: #4CAF50; color: white; padding: 10px; border: none; border-radius: 5px;
-            cursor: pointer; flex: 1; margin-right: 5px;
-          ">Lưu</button>
-  
-          <button id="closeBtn" style="
-            background-color: #f44336; color: white; padding: 10px; border: none; border-radius: 5px;
-            cursor: pointer; flex: 1; margin-left: 5px;
-          ">Đóng</button>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <div class="card shadow-lg p-3 bg-white rounded" style="width: 400px;">
+      <div class="card-body">
+        <h5 class="card-title text-center">Thêm từ mới</h5>
+
+        <label class="form-label">Từ:</label>
+        <input type="text" class="form-control" id="wordInput" value="${text}">
+
+        <label class="form-label mt-2">Loại từ:</label>
+        <input type="text" class="form-control" id="wordTypeSelect">
+
+        <label class="form-label mt-2">Nghĩa:</label>
+        <input type="text" class="form-control" id="wordMeaning">
+
+        <label class="form-label mt-2">Ví dụ:</label>
+        <textarea class="form-control" id="wordExample" rows="3"></textarea>
+
+        <div class="d-flex justify-content-between mt-3">
+          <button class="btn btn-primary" id="saveBtn">Lưu</button>
+          <button class="btn btn-secondary" id="closeBtn">Đóng</button>
         </div>
       </div>
-    `;
+    </div>
+  `;
 
-  popup.style.position = "fixed";
-  popup.style.top = "0";
-  popup.style.left = "0";
-  popup.style.width = "100vw";
-  popup.style.height = "100vh";
-  popup.style.backgroundColor = "rgba(0,0,0,0.3)";
-  popup.style.display = "flex";
-  popup.style.alignItems = "center";
-  popup.style.justifyContent = "center";
+  popup.style.position = "absolute";
+  popup.style.left = "50%";
+  popup.style.top = "50%";
+  popup.style.transform = "translate(-50%, -50%)";
   popup.style.zIndex = "1001";
 
   document.body.appendChild(popup);
 
   document.getElementById("saveBtn").addEventListener("click", function () {
     let word = document.getElementById("wordInput").value;
-    let type = document.getElementById("wordType").value;
+    let type = document.getElementById("wordTypeSelect").value;
     let meaning = document.getElementById("wordMeaning").value;
     let example = document.getElementById("wordExample").value;
 
     if (word) {
-      saveWord({ word, type, meaning, example });
+      saveWord(word.toLowerCase().trim(), type, meaning, example);
       closePopup();
     }
   });
@@ -135,12 +118,35 @@ function closePopup() {
   document.removeEventListener("click", handleOutsideClick);
 }
 
-function saveWord(word) {
-  chrome.storage.local.get({ words: [] }, function (data) {
-    let words = data.words;
-    words.push(word);
-    chrome.storage.local.set({ words: words }, function () {
-      alert("Đã lưu từ: " + word);
-    });
+function saveWord(word, type, meaning, example) {
+  const spreadsheetId = "1UM9_8V74tR2oTu1It4IT1Jq6jmro_7ArMCqYs5qGxi0";
+  const sheetName = "vocab-extension";
+  const range = `${sheetName}!A:D`; // Cột A: Từ vựng, Cột B: Nghĩa
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED`;
+
+  chrome.storage.local.get("oauth_token", function (data) {
+    if (!data.oauth_token) {
+      console.error("Không tìm thấy token OAuth!");
+      return;
+    }
+
+    fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${data.oauth_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        values: [[word, type, meaning, example]],
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Data saved:", data);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
   });
 }

@@ -9,3 +9,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
   }
 });
+
+chrome.identity.getAuthToken({ interactive: true }, function (token) {
+  if (chrome.runtime.lastError) {
+    console.error(chrome.runtime.lastError);
+    return;
+  }
+  console.log("Token:", token);
+  chrome.storage.local.set({ oauth_token: token }, function () {
+    console.log("Token saved to chrome.storage");
+  });
+});
