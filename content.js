@@ -1,7 +1,17 @@
 document.addEventListener("mouseup", function (event) {
   let selectedText = window.getSelection().toString().trim();
+  console.log(selectedText);
+
+  // Nếu click vào icon, bỏ qua sự kiện mouseup
+  if (event.target.id === "iconSpan") {
+    return;
+  }
+
   if (selectedText.length > 0) {
     showIcon(selectedText, event.pageX, event.pageY);
+  } else {
+    let popup = document.getElementById("wordIcon");
+    if (popup) popup.remove();
   }
 });
 
@@ -17,10 +27,9 @@ function showIcon(text, x, y) {
 
   let icon = document.createElement("div");
   icon.id = "wordIcon";
-  icon.innerText = "📌";
   icon.style.position = "absolute";
-  icon.style.left = `${rect.right + window.scrollX + 5}px`; // Hiển thị bên phải từ
-  icon.style.top = `${rect.top + window.scrollY}px`; // Căn theo chiều cao từ
+  icon.style.left = `${rect.right + window.scrollX + 5}px`;
+  icon.style.top = `${rect.top + window.scrollY}px`;
   icon.style.cursor = "pointer";
   icon.style.backgroundColor = "#fff";
   icon.style.border = "1px solid #ccc";
@@ -28,18 +37,30 @@ function showIcon(text, x, y) {
   icon.style.padding = "5px";
   icon.style.fontSize = "20px";
   icon.style.zIndex = "1000";
+  icon.style.display = "flex"; // Fix lỗi click
+  icon.style.alignItems = "center";
+  icon.style.justifyContent = "center";
+
+  // Thêm emoji vào span
+  let iconSpan = document.createElement("img");
+  iconSpan.id = "iconSpan";
+  iconSpan.src = "chrome-extension://" + chrome.runtime.id + "/icon1.png";
+  iconSpan.width = 24;
+  iconSpan.height = 24;
+  icon.appendChild(iconSpan);
 
   document.body.appendChild(icon);
 
   icon.addEventListener("click", function (event) {
     event.stopPropagation(); // Ngăn chặn sự kiện click lan ra ngoài
+    console.log("Icon clicked!"); // Kiểm tra xem có nhận click không
     showPopup(text, rect.right + 10, rect.top);
     icon.remove(); // Xóa icon khi popup xuất hiện
   });
 
   setTimeout(() => {
-    icon.remove();
-  }, 4000);
+    if (existingIcon) existingIcon.remove();
+  }, 100);
 }
 
 function showPopup(text) {
@@ -50,7 +71,7 @@ function showPopup(text) {
   popup.innerHTML = `
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 
-    <div class="card shadow-lg p-3 bg-white rounded" style="width: 400px;">
+    <div id="popupContent" class="card shadow-lg p-3 bg-white rounded" style="width: 400px;">
       <div class="card-body">
         <h5 class="card-title text-center">Thêm từ mới</h5>
 
@@ -98,9 +119,9 @@ function showPopup(text) {
     closePopup();
   });
 
-  setTimeout(() => {
-    document.addEventListener("click", handleOutsideClick);
-  }, 100);
+  // setTimeout(() => {
+  //   document.addEventListener("click", handleOutsideClick);
+  // }, 100);
 }
 
 // Đóng popup nếu click ra ngoài

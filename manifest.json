@@ -6,7 +6,7 @@
   "permissions": ["storage", "activeTab", "scripting", "identity"],
   "web_accessible_resources": [
     {
-      "resources": ["data.json"],
+      "resources": ["data.json", "icon1.png"],
       "matches": ["<all_urls>"]
     }
   ],
